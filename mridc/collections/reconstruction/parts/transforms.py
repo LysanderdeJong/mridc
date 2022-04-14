@@ -105,9 +105,9 @@ class MRIDataTransforms:
 
         # Apply zero-filling on kspace
         if self.kspace_zero_filling_size is not None and self.kspace_zero_filling_size not in ("", "None"):
-            padding_top = np.floor_divide(abs(int(self.kspace_zero_filling_size[0]) - kspace.shape[1]), 2)
+            padding_top = np.floor_divide(abs(int(self.kspace_zero_filling_size[0]) - kspace.shape[-3]), 2)
             padding_bottom = padding_top
-            padding_left = np.floor_divide(abs(int(self.kspace_zero_filling_size[1]) - kspace.shape[2]), 2)
+            padding_left = np.floor_divide(abs(int(self.kspace_zero_filling_size[1]) - kspace.shape[-2]), 2)
             padding_right = padding_left
 
             kspace = torch.view_as_complex(kspace)
@@ -133,13 +133,14 @@ class MRIDataTransforms:
             eta = torch.tensor([])
 
         # TODO: add RSS target option
-        if sensitivity_map is not None and sensitivity_map.size != 0:
-            target = torch.sum(complex_mul(ifft2c(kspace, fft_type=self.fft_type), complex_conj(sensitivity_map)), 0)
-            target = torch.view_as_complex(target)
-        elif target is not None and target.size != 0:
+        if target is not None and target.size != 0:
             target = to_tensor(target)
+            target = torch.view_as_complex(target)
         elif "target" in attrs or "target_rss" in attrs:
             target = torch.tensor(attrs["target"])
+        elif sensitivity_map is not None and sensitivity_map.size != 0:
+            target = torch.sum(complex_mul(ifft2c(kspace, fft_type=self.fft_type), complex_conj(sensitivity_map)), -4)
+            target = torch.view_as_complex(target)
         else:
             raise ValueError("No target found")
 
