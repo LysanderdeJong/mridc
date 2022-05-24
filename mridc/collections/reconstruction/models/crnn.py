@@ -24,11 +24,18 @@ __all__ = ["CRNNet"]
 
 class CRNNet(BaseMRIReconstructionModel, ABC):
     """
-    Implementation of the Convolutional Recurrent Neural Network, inspired by [1].
+    Implementation of the Convolutional Recurrent Neural Network, inspired by C. Qin, J. Schlemper, J. Caballero, \
+    A. N. Price, J. V. Hajnal and D. Rueckert.
 
     References
     ----------
-    .. [1] C. Qin, J. Schlemper, J. Caballero, A. N. Price, J. V. Hajnal and D. Rueckert, "Convolutional Recurrent Neural Networks for Dynamic MR Image Reconstruction," in IEEE Transactions on Medical Imaging, vol. 38, no. 1, pp. 280-290, Jan. 2019, doi: 10.1109/TMI.2018.2863670.
+
+    ..
+
+        C. Qin, J. Schlemper, J. Caballero, A. N. Price, J. V. Hajnal and D. Rueckert, "Convolutional Recurrent \
+        Neural Networks for Dynamic MR Image Reconstruction," in IEEE Transactions on Medical Imaging, vol. 38, \
+        no. 1, pp. 280-290, Jan. 2019, doi: 10.1109/TMI.2018.2863670.
+
     """
 
     def __init__(self, cfg: DictConfig, trainer: Trainer = None):

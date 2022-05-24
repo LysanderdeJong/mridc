@@ -12,9 +12,8 @@ MRI Data Consistency Documentation
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
 
-Indices and tables
-==================
+.. toctree::
+    :maxdepth: 4
+    :caption: API Documentation:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    modules.rst
