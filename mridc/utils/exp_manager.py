@@ -9,7 +9,7 @@ import sys
 import time
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import timedelta
+
 from pathlib import Path
 from shutil import copy, move
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -20,7 +20,7 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf, open_dict
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
-from pytorch_lightning.callbacks.timer import Interval, Timer
+from pytorch_lightning.callbacks.timer import Timer
 from pytorch_lightning.loggers import LoggerCollection as _LoggerCollection, TensorBoardLogger, WandbLogger
 from pytorch_lightning.strategies.ddp import DDPStrategy
 

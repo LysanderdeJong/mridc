@@ -432,17 +432,17 @@ class ModelPT(LightningModule, Model):
                 optim_config["sched"]["t_accumulate_grad_batches"] = self._trainer.accumulate_grad_batches
                 optim_config["sched"]["t_limit_train_batches"] = self._trainer.limit_train_batches
                 if self._trainer.accelerator is None:
-                    optim_config["sched"]["t_num_workers"] = self._trainer.num_gpus or 1
+                    optim_config["sched"]["t_num_workers"] = self._trainer.num_devices or 1
                 elif self._trainer.accelerator == "ddp_cpu":
-                    optim_config["sched"]["t_num_workers"] = self._trainer.num_processes * self._trainer.num_nodes
+                    optim_config["sched"]["t_num_workers"] = self._trainer.num_devices * self._trainer.num_nodes
                 elif self._trainer.accelerator == "ddp":
-                    optim_config["sched"]["t_num_workers"] = self._trainer.num_gpus * self._trainer.num_nodes
+                    optim_config["sched"]["t_num_workers"] = self._trainer.num_devices * self._trainer.num_nodes
                 else:
                     logging.warning(
                         f"The lightning trainer received accelerator: {self._trainer.accelerator}. We "
                         "recommend to use 'ddp' instead."
                     )
-                    optim_config["sched"]["t_num_workers"] = self._trainer.num_gpus * self._trainer.num_nodes
+                    optim_config["sched"]["t_num_workers"] = self._trainer.num_devices * self._trainer.num_nodes
             else:
                 optim_config["sched"]["max_steps"] = self._trainer.max_steps
 
@@ -1090,7 +1090,7 @@ class ModelPT(LightningModule, Model):
             logging.info("No `test_ds` config found within the manifest.")
             return False
 
-        if trainer is not None and trainer.num_gpus > 1:
+        if trainer is not None and trainer.num_devices > 1:
             # Replace ddp multi-gpu until PTL has a fix
             DDP_WARN = """\n\nDuring testing, it is currently advisable to construct a new Trainer "
                     "with single GPU and no DDP to obtain accurate results.
@@ -1117,8 +1117,8 @@ class ModelPT(LightningModule, Model):
         # Update AppState with world information from trainer
         if isinstance(trainer, Trainer):
             app_state = AppState()
-            if self._trainer.num_gpus and self._trainer.num_nodes:  # type: ignore
-                app_state.world_size = self._trainer.num_gpus * self._trainer.num_nodes  # type: ignore
+            if self._trainer.num_devices and self._trainer.num_nodes:  # type: ignore
+                app_state.world_size = self._trainer.num_devices * self._trainer.num_nodes  # type: ignore
         else:
             logging.warning("World size can only be set by PyTorch Lightning Trainer.")
 
