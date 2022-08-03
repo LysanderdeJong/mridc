@@ -14,12 +14,14 @@ def temp_seed(rng: np.random, seed: Optional[Union[int, Tuple[int, ...]]]):
     """
     Temporarily sets the seed of the given random number generator.
 
-    Args:
-        rng: The random number generator.
-        seed: The seed to set.
+    Parameters
+    ----------
+    rng: The random number generator.
+    seed: The seed to set.
 
-    Returns:
-        A context manager.
+    Returns
+    -------
+    A context manager.
     """
     if seed is None:
         try:
@@ -42,12 +44,13 @@ class MaskFunc:
         """
         Initialize the mask function.
 
-        Args:
-            center_fractions: Fraction of low-frequency columns to be retained. If multiple values are provided, then
-                one of these numbers is chosen uniformly each time. For 2D setting this value corresponds to setting
-                the Full-Width-Half-Maximum.
-            accelerations: Amount of under-sampling. This should have the same length as center_fractions. If multiple
-            values are provided, then one of these is chosen uniformly each time.
+        Parameters
+        ----------
+        center_fractions: Fraction of low-frequency columns to be retained. If multiple values are provided, then \
+        one of these numbers is chosen uniformly each time. For 2D setting this value corresponds to setting the \
+        Full-Width-Half-Maximum.
+        accelerations: Amount of under-sampling. This should have the same length as center_fractions. If multiple \
+        values are provided, then one of these is chosen uniformly each time.
         """
         if len(center_fractions) != len(accelerations):
             raise ValueError("Number of center fractions should match number of accelerations")
@@ -63,15 +66,23 @@ class MaskFunc:
         half_scan_percentage: Optional[float] = 0.0,
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
+        """
+
+        Parameters
+        ----------
+        shape: Shape of the input tensor.
+        seed: Seed for the random number generator.
+        half_scan_percentage: Percentage of the low-frequency columns to be retained.
+        scale: Scale of the mask.
+
+        Returns
+        -------
+        A tuple of the mask and the number of low-frequency columns retained.
+        """
         raise NotImplementedError
 
     def choose_acceleration(self):
-        """
-        Choose acceleration.
-
-        Returns:
-            Acceleration.
-        """
+        """Choose acceleration."""
         choice = self.rng.randint(0, len(self.accelerations))
         center_fraction = self.center_fractions[choice]
         acceleration = self.accelerations[choice]
@@ -83,22 +94,18 @@ class RandomMaskFunc(MaskFunc):
     """
     RandomMaskFunc creates a sub-sampling mask of a given shape.
 
-    The mask selects a subset of columns from the input k-space data. If the
-    k-space data has N columns, the mask picks out:
-        1. N_low_freqs = (N * center_fraction) columns in the center
-           corresponding to low-frequencies.
-        2. The other columns are selected uniformly at random with a
-        probability equal to: prob = (N / acceleration - N_low_freqs) /
-        (N - N_low_freqs). This ensures that the expected number of columns
-        selected is equal to (N / acceleration).
+    The mask selects a subset of columns from the input k-space data. If the k-space data has N columns, the mask \
+    picks out:
+        1. N_low_freqs = (N * center_fraction) columns in the center corresponding to low-frequencies.
+        2. The other columns are selected uniformly at random with a probability equal to: \
+        prob = (N / acceleration - N_low_freqs) /  (N - N_low_freqs). This ensures that the expected number of \
+        columns selected is equal to (N / acceleration).
 
-    It is possible to use multiple center_fractions and accelerations, in which
-    case one possible (center_fraction, acceleration) is chosen uniformly at
-    random each time the RandomMaskFunc object is called.
+    It is possible to use multiple center_fractions and accelerations, in which case one possible (center_fraction, \
+    acceleration) is chosen uniformly at random each time the RandomMaskFunc object is called.
 
-    For example, if accelerations = [4, 8] and center_fractions = [0.08, 0.04],
-    then there is a 50% probability that 4-fold acceleration with 8% center
-    fraction is selected and a 50% probability that 8-fold acceleration with 4%
+    For example, if accelerations = [4, 8] and center_fractions = [0.08, 0.04], then there is a 50% probability that \
+    4-fold acceleration with 8% center  fraction is selected and a 50% probability that 8-fold acceleration with 4% \
     center fraction is selected.
     """
 
@@ -110,17 +117,18 @@ class RandomMaskFunc(MaskFunc):
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
         """
-        Args:
-            shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn
-                along the second last dimension.
-            seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time
-                for the same shape. The random state is reset afterwards.
-            half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
-                TODO: implement it for 1D masking
-            scale: Optional; Defines the scale of the center of the mask.
+        Parameters
+        ----------
+        shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn \
+        along the second last dimension.
+        seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time \
+        for the same shape. The random state is reset afterwards.
+        half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
+        scale: Optional; Defines the scale of the center of the mask.
 
-        Returns:
-            A tuple of the mask and the number of columns selected.
+        Returns
+        -------
+        A tuple of the mask and the number of columns selected.
         """
         if len(shape) < 3:
             raise ValueError("Shape should have 3 or more dimensions")
@@ -148,23 +156,19 @@ class EquispacedMaskFunc(MaskFunc):
     """
     EquispacedMaskFunc creates a sub-sampling mask of a given shape.
 
-    The mask selects a subset of columns from the input k-space data. If the
-    k-space data has N columns, the mask picks out:
-        1. N_low_freqs = (N * center_fraction) columns in the center
-           corresponding to low-frequencies.
-        2. The other columns are selected with equal spacing at a proportion
-           that reaches the desired acceleration rate taking into consideration
-           the number of low frequencies. This ensures that the expected number
-           of columns selected is equal to (N / acceleration)
+    The mask selects a subset of columns from the input k-space data. If the k-space data has N columns, the mask \
+    picks out:
+        1. N_low_freqs = (N * center_fraction) columns in the center corresponding to low-frequencies.
+        2. The other columns are selected with equal spacing at a proportion that reaches the desired acceleration \
+        rate taking into consideration the number of low frequencies. This ensures that the expected number of \
+        columns selected is equal to (N / acceleration)
 
-    It is possible to use multiple center_fractions and accelerations, in which
-    case one possible (center_fraction, acceleration) is chosen uniformly at
-    random each time the EquispacedMaskFunc object is called.
+    It is possible to use multiple center_fractions and accelerations, in which case one possible (center_fraction, \
+    acceleration) is chosen uniformly at random each time the EquispacedMaskFunc object is called.
 
-    Note that this function may not give equispaced samples (documented in
-    https://github.com/facebookresearch/fastMRI/issues/54), which will require
-    modifications to standard GRAPPA approaches. Nonetheless, this aspect of
-    the function has been preserved to match the public multicoil data.
+    Note that this function may not give equispaced samples (documented in \
+    https://github.com/facebookresearch/fastMRI/issues/54), which will require modifications to standard GRAPPA \
+    approaches. Nonetheless, this aspect of the function has been preserved to match the public multicoil data.
     """
 
     def __call__(
@@ -175,20 +179,18 @@ class EquispacedMaskFunc(MaskFunc):
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
         """
+        Parameters
+        ----------
+        shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn \
+        along the second last dimension.
+        seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time for \
+        the same shape. The random state is reset afterwards.
+        half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
+        scale: Optional; Defines the scale of the center of the mask.
 
-        Args:
-            shape: The shape of the mask to be created. The shape should have
-                at least 3 dimensions. Samples are drawn along the second last
-                dimension.
-            seed: Seed for the random number generator. Setting the seed
-                ensures the same mask is generated each time for the same
-                shape. The random state is reset afterwards.
-            half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
-                TODO: implement it for 1D masking
-            scale: Optional; Defines the scale of the center of the mask.
-
-        Returns:
-            A tuple of the mask and the number of columns selected.
+        Returns
+        -------
+        A tuple of the mask and the number of columns selected.
         """
         if len(shape) < 3:
             raise ValueError("Shape should have 3 or more dimensions")
@@ -223,8 +225,8 @@ class Gaussian1DMaskFunc(MaskFunc):
     """
     Creates a 1D sub-sampling mask of a given shape.
 
-    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of which
-    the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled
+    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of \
+    which the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled \
     according to a Gaussian distribution.
 
     The center fractions here act as Full-Width at Half-Maximum (FWHM) values.
@@ -238,17 +240,19 @@ class Gaussian1DMaskFunc(MaskFunc):
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
         """
-        Args:
-            shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn
-                along the second last dimension.
-            seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time
-                for the same shape. The random state is reset afterwards.
-            half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
-            scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an
-                ellipse of which the half-axes will set to the set scale % of the fully sampled region
+        Parameters
+        ----------
+        shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn \
+        along the second last dimension.
+        seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time \
+        for the same shape. The random state is reset afterwards.
+        half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
+        scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an \
+        ellipse of which the half-axes will set to the set scale % of the fully sampled region
 
-        Returns:
-            A tuple of the mask and the number of columns selected.
+        Returns
+        -------
+        A tuple of the mask and the number of columns selected.
         """
         dims = [1 for _ in shape]
         self.shape = tuple(shape[-3:-1])
@@ -273,12 +277,7 @@ class Gaussian1DMaskFunc(MaskFunc):
         return torch.from_numpy(mask[0].reshape(dims).astype(np.float32)), acceleration
 
     def gaussian_kspace(self):
-        """
-        Creates a Gaussian sampled k-space center.
-
-        Returns:
-            A numpy array of the k-space center.
-        """
+        """Creates a Gaussian sampled k-space center."""
         scaled = int(self.shape[0] * self.scale)
         center = np.ones((scaled, self.shape[1]))
         top_scaled = torch.div((self.shape[0] - scaled), 2, rounding_mode="trunc").item()
@@ -288,12 +287,7 @@ class Gaussian1DMaskFunc(MaskFunc):
         return np.concatenate((top, center, btm))
 
     def gaussian_coordinates(self):
-        """
-        Creates a Gaussian sampled k-space coordinates.
-
-        Returns:
-            A numpy array of the k-space coordinates.
-        """
+        """Creates a Gaussian sampled k-space coordinates."""
         n_sample = int(self.shape[0] / self.acceleration)
         kernel = self.gaussian_kernel()
         idxs = np.random.choice(range(self.shape[0]), size=n_sample, replace=False, p=kernel)
@@ -302,12 +296,7 @@ class Gaussian1DMaskFunc(MaskFunc):
         return xsamples, ysamples
 
     def gaussian_kernel(self):
-        """
-        Creates a Gaussian sampled k-space kernel.
-
-        Returns:
-            A numpy array of the k-space kernel.
-        """
+        """Creates a Gaussian sampled k-space kernel."""
         kernel = 1
         for fwhm, kern_len in zip(self.full_width_half_maximum, self.shape):
             sigma = fwhm / np.sqrt(8 * np.log(2))
@@ -323,8 +312,8 @@ class Gaussian2DMaskFunc(MaskFunc):
     """
     Creates a 2D sub-sampling mask of a given shape.
 
-    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of which
-    the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled
+    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of \
+    which the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled \
     according to a Gaussian distribution.
 
     The center fractions here act as Full-Width at Half-Maximum (FWHM) values.
@@ -338,17 +327,19 @@ class Gaussian2DMaskFunc(MaskFunc):
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
         """
-        Args:
-            shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn
-                along the second last dimension.
-            seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time
-                for the same shape. The random state is reset afterwards.
-            half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
-            scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an
-                ellipse of which the half-axes will set to the set scale % of the fully sampled region
+        Parameters
+        ----------
+        shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn \
+        along the second last dimension.
+        seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time for \
+         the same shape. The random state is reset afterwards.
+        half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
+        scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an \
+        ellipse of which the half-axes will set to the set scale % of the fully sampled region
 
-        Returns:
-            A tuple of the mask and the number of columns selected.
+        Returns
+        -------
+        A tuple of the mask and the number of columns selected.
         """
         dims = [1 for _ in shape]
         self.shape = tuple(shape[-3:-1])
@@ -372,12 +363,7 @@ class Gaussian2DMaskFunc(MaskFunc):
         return torch.from_numpy(mask.reshape(dims).astype(np.float32)), acceleration
 
     def gaussian_kspace(self):
-        """
-        Creates a Gaussian sampled k-space center.
-
-        Returns:
-            A numpy array of the k-space center.
-        """
+        """Creates a Gaussian sampled k-space center."""
         a, b = self.scale * self.shape[0], self.scale * self.shape[1]
         afocal, bfocal = self.shape[0] / 2, self.shape[1] / 2
         xx, yy = np.mgrid[: self.shape[0], : self.shape[1]]
@@ -385,12 +371,7 @@ class Gaussian2DMaskFunc(MaskFunc):
         return (ellipse < 1).astype(float)
 
     def gaussian_coordinates(self):
-        """
-        Creates a Gaussian sampled k-space coordinates.
-
-        Returns:
-            A numpy array of the k-space coordinates.
-        """
+        """Creates a Gaussian sampled k-space coordinates."""
         n_sample = int(self.shape[0] * self.shape[1] / self.acceleration)
         cartesian_prod = list(np.ndindex(self.shape))  # type: ignore
         kernel = self.gaussian_kernel()
@@ -398,12 +379,7 @@ class Gaussian2DMaskFunc(MaskFunc):
         return list(zip(*list(map(cartesian_prod.__getitem__, idxs))))
 
     def gaussian_kernel(self):
-        """
-        Creates a Gaussian kernel.
-
-        Returns:
-            A numpy array of the kernel.
-        """
+        """Creates a Gaussian kernel."""
         kernels = []
         for fwhm, kern_len in zip(self.full_width_half_maximum, self.shape):
             sigma = fwhm / np.sqrt(8 * np.log(2))
@@ -419,14 +395,14 @@ class Poisson2DMaskFunc(MaskFunc):
     """
     Creates a 2D sub-sampling mask of a given shape.
 
-    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of which
-    the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled
-    according to a (variable density) Poisson distribution.
+    For autocalibration purposes, data points near the k-space center will be fully sampled within an ellipse of \
+    which the half-axes will set to the set scale % of the fully sampled region. The remaining points will be sampled \
+     according to a (variable density) Poisson distribution.
 
-    For a given acceleration factor to be accurate, the scale for the fully sampled center should remain at the default
-    0.02. A predefined list is used to convert the acceleration factor to the appropriate r parameter needed for the
-    variable density calculation. This list has been made to accommodate acceleration factors of 4 up to 21, rounding
-    off to the nearest one available. As such, acceleration factors outside this range cannot be used.
+    For a given acceleration factor to be accurate, the scale for the fully sampled center should remain at the \
+    default 0.02. A predefined list is used to convert the acceleration factor to the appropriate r parameter needed \
+    for the variable density calculation. This list has been made to accommodate acceleration factors of 4 up to 21, \
+    rounding off to the nearest one available. As such, acceleration factors outside this range cannot be used.
     """
 
     def __call__(
@@ -437,17 +413,19 @@ class Poisson2DMaskFunc(MaskFunc):
         scale: Optional[float] = 0.02,
     ) -> Tuple[torch.Tensor, int]:
         """
-        Args:
-            shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn
-                along the second last dimension.
-            seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time
-                for the same shape. The random state is reset afterwards.
-            half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
-            scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an
-                ellipse of which the half-axes will set to the set scale % of the fully sampled region
+        Parameters
+        ----------
+        shape: The shape of the mask to be created. The shape should have at least 3 dimensions. Samples are drawn \
+        along the second last dimension.
+        seed: Seed for the random number generator. Setting the seed ensures the same mask is generated each time \
+        for the same shape. The random state is reset afterwards.
+        half_scan_percentage: Optional; Defines a fraction of the k-space data that is not sampled.
+        scale: For autocalibration purposes, data points near the k-space center will be fully sampled within an \
+        ellipse of which the half-axes will set to the set scale % of the fully sampled region
 
-        Returns:
-            A tuple of the mask and the number of columns selected.
+        Returns
+        -------
+        A tuple of the mask and the number of columns selected.
         """
         dims = [1 for _ in shape]
         self.shape = tuple(shape[-3:-1])
@@ -681,14 +659,15 @@ def create_mask_for_mask_type(
     """
     Creates a MaskFunc object for the given mask type.
 
-    Args:
-        mask_type_str: The string representation of the mask type.
-        center_fractions: The center fractions for the mask.
-            # TODO: For gaussian masking serves as Full-Width-at-Half-Maximum, consider renaming.
-        accelerations: The accelerations for the mask.
+    Parameters
+    ----------
+    mask_type_str: The string representation of the mask type.
+    center_fractions: The center fractions for the mask.
+    accelerations: The accelerations for the mask.
 
-    Returns:
-        A MaskFunc object.
+    Returns
+    -------
+    A MaskFunc object.
     """
     if mask_type_str == "random1d":
         return RandomMaskFunc(center_fractions, accelerations)

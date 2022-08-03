@@ -25,12 +25,16 @@ __all__ = ["LPDNet"]
 
 class LPDNet(BaseMRIReconstructionModel, ABC):
     """
-    Learned Primal Dual network implementation inspired by [1]_.
+    Implementation of the Learned Primal Dual network, inspired by Adler, Jonas, and Ozan Öktem.
 
     References
     ----------
-    .. [1] Adler, Jonas, and Ozan Öktem. “Learned Primal-Dual Reconstruction.” IEEE Transactions on Medical Imaging,
-    vol. 37, no. 6, June 2018, pp. 1322–32. arXiv.org, https://doi.org/10.1109/TMI.2018.2799231.
+
+    ..
+
+        Adler, Jonas, and Ozan Öktem. “Learned Primal-Dual Reconstruction.” IEEE Transactions on Medical Imaging, \
+        vol. 37, no. 6, June 2018, pp. 1322–32. arXiv.org, https://doi.org/10.1109/TMI.2018.2799231.
+
     """
 
     def __init__(self, cfg: DictConfig, trainer: Trainer = None):
@@ -70,7 +74,7 @@ class LPDNet(BaseMRIReconstructionModel, ABC):
             )
         else:
             raise NotImplementedError(
-                f"LPDNet is currently implemented for primal_model_architecture == 'CONV' or 'UNet'."
+                "LPDNet is currently implemented for primal_model_architecture == 'CONV' or 'UNet'."
                 f"Got primal_model_architecture == {primal_model_architecture}."
             )
 
@@ -104,7 +108,7 @@ class LPDNet(BaseMRIReconstructionModel, ABC):
             )
         else:
             raise NotImplementedError(
-                f"LPDNet is currently implemented for dual_model_architecture == 'CONV' or 'DIDN' or 'UNet'."
+                "LPDNet is currently implemented for dual_model_architecture == 'CONV' or 'DIDN' or 'UNet'."
                 f"Got dual_model_architecture == {dual_model_architecture}."
             )
 
@@ -146,14 +150,25 @@ class LPDNet(BaseMRIReconstructionModel, ABC):
     ) -> torch.Tensor:
         """
         Forward pass of the network.
-        Args:
-            y: torch.Tensor, shape [batch_size, n_coils, n_x, n_y, 2], masked kspace data
-            sensitivity_maps: torch.Tensor, shape [batch_size, n_coils, n_x, n_y, 2], coil sensitivity maps
-            mask: torch.Tensor, shape [1, 1, n_x, n_y, 1], sampling mask
-            init_pred: torch.Tensor, shape [batch_size, n_x, n_y, 2], initial guess for pred
-            target: torch.Tensor, shape [batch_size, n_x, n_y, 2], target data
-        Returns:
-             Final prediction of the network.
+
+        Parameters
+        ----------
+        y: Subsampled k-space data.
+            torch.Tensor, shape [batch_size, n_coils, n_x, n_y, 2]
+        sensitivity_maps: Coil sensitivity maps.
+            torch.Tensor, shape [batch_size, n_coils, n_x, n_y, 2]
+        mask: Sampling mask.
+            torch.Tensor, shape [1, 1, n_x, n_y, 1]
+        init_pred: Initial prediction.
+            torch.Tensor, shape [batch_size, n_x, n_y, 2]
+        target: Target data to compute the loss.
+            torch.Tensor, shape [batch_size, n_x, n_y, 2]
+
+        Returns
+        -------
+        pred: list of torch.Tensor, shape [batch_size, n_x, n_y, 2], or  torch.Tensor, shape [batch_size, n_x, n_y, 2]
+             If self.accumulate_loss is True, returns a list of all intermediate estimates.
+             If False, returns the final estimate.
         """
         sensitivity_maps = self.sens_net(y, mask) if self.use_sens_net else sensitivity_maps
 

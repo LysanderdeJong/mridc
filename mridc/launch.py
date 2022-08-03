@@ -27,7 +27,14 @@ from mridc.utils.exp_manager import exp_manager
 
 @hydra_runner(config_path=".", config_name="config")
 def main(cfg: DictConfig) -> None:
-    """Main function for training and running a model."""
+    """
+    Main function for training and running a model
+
+    Parameters
+    ----------
+    cfg: Configuration (yaml) file.
+        DictConfig
+    """
     logging.info(f"Config: {OmegaConf.to_yaml(cfg)}")
 
     trainer = pl.Trainer(**cfg.trainer)
@@ -68,9 +75,9 @@ def main(cfg: DictConfig) -> None:
     else:
         raise NotImplementedError(
             f"{model_name} is not implemented in MRIDC. You can use one of the following methods: "
-            f"CASCADENET, CIRIM, CRNNET, DUNET, E2EVN, JOINTICNET, KIKINET, LPDNET, MULTIDOMAINNET, PICS, RVN, UNET, "
-            f"VSNET, XPDNET, or Zero-Filled. /n"
-            f"If you implemented a new model, please consider adding it through a PR on GitHub."
+            "CASCADENET, CIRIM, CRNNET, DUNET, E2EVN, JOINTICNET, KIKINET, LPDNET, MULTIDOMAINNET, PICS, RVN, UNET, "
+            "VSNET, XPDNET, or Zero-Filled. /n"
+            "If you implemented a new model, please consider adding it through a PR on GitHub."
         )
 
     if cfg.get("pretrained", None):
@@ -79,6 +86,8 @@ def main(cfg: DictConfig) -> None:
         model.load_state_dict(torch.load(checkpoint)["state_dict"])
 
     if cfg.get("mode", None) == "train":
+        logging.info("Validating")
+        trainer.validate(model)
         logging.info("Training")
         trainer.fit(model)
     else:

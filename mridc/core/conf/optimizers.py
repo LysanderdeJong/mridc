@@ -27,10 +27,7 @@ __all__ = [
 
 @dataclass
 class OptimizerParams:
-    """
-    Base Optimizer params with no values. User can chose it to explicitly override via
-    command line arguments
-    """
+    """Base Optimizer params with no values. User can chose it to explicitly override via command line arguments."""
 
     lr: Optional[float] = MISSING
 
@@ -39,7 +36,8 @@ class OptimizerParams:
 class SGDParams(OptimizerParams):
     """
     Default configuration for Adam optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html?highlight=sgd#torch.optim.SGD
     """
@@ -54,7 +52,8 @@ class SGDParams(OptimizerParams):
 class AdamParams(OptimizerParams):
     """
     Default configuration for Adam optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html?highlight=adam#torch.optim.Adam
     """
@@ -69,7 +68,8 @@ class AdamParams(OptimizerParams):
 class AdamWParams(OptimizerParams):
     """
     Default configuration for AdamW optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.AdamW
     """
@@ -84,7 +84,8 @@ class AdamWParams(OptimizerParams):
 class AdadeltaParams(OptimizerParams):
     """
     Default configuration for Adadelta optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.Adadelta
     """
@@ -98,7 +99,8 @@ class AdadeltaParams(OptimizerParams):
 class AdamaxParams(OptimizerParams):
     """
     Default configuration for Adamax optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.Adamax
     """
@@ -112,7 +114,8 @@ class AdamaxParams(OptimizerParams):
 class AdagradParams(OptimizerParams):
     """
     Default configuration for Adagrad optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.Adagrad
     """
@@ -127,7 +130,8 @@ class AdagradParams(OptimizerParams):
 class RMSpropParams(OptimizerParams):
     """
     Default configuration for RMSprop optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.RMSprop
     """
@@ -143,7 +147,8 @@ class RMSpropParams(OptimizerParams):
 class RpropParams(OptimizerParams):
     """
     Default configuration for RpropParams optimizer.
-    ..note:
+
+    .. note::
         For the details on the function/meanings of the arguments, please refer to:
         https://pytorch.org/docs/stable/optim.html#torch.optim.Rprop
     """
@@ -155,18 +160,9 @@ class RpropParams(OptimizerParams):
 @dataclass
 class NovogradParams(OptimizerParams):
     """
-    Configuration of the Novograd optimizer. It has been proposed  in "Stochastic Gradient Methods with Layer-wise
-    Adaptive Moments for Training of Deep Networks" (https://arxiv.org/abs/1905.11286).
-    The OptimizerParams is a Base Optimizer params with no values.
-    User can chose it to explicitly override via command line arguments.
-        lr (float, optional): learning rate (default: 1e-3)
-        betas (Tuple[float, float], optional): coefficients used for computing
-            running averages of gradient and its square (default: (0.9, 0.999))
-        eps (float, optional): term added to the denominator to improve
-            numerical stability (default: 1e-8)
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        amsgrad (boolean, optional): whether to use the AMSGrad variant of this
-            algorithm from the paper "On the Convergence of Adam and Beyond"
+    Configuration of the Novograd optimizer. It has been proposed in "Stochastic Gradient Methods with Layer-wise
+    Adaptive Moments for Training of Deep Networks" (https://arxiv.org/abs/1905.11286). The OptimizerParams is a Base
+    Optimizer params with no values. User can choose to explicitly override it via command line arguments.
     """
 
     betas: Tuple[float, float] = (0.95, 0.98)
@@ -174,6 +170,7 @@ class NovogradParams(OptimizerParams):
     weight_decay: float = 0
     grad_averaging: bool = False
     amsgrad: bool = False
+    lr: float = 1e-3
     luc: bool = False
     luc_trust: float = 1e-3
     luc_eps: float = 1e-8
@@ -185,15 +182,23 @@ class AdafactorParams(OptimizerParams):
     Configuration of the Adafactor optimizer.
     It has been proposed  in "Adafactor: Adaptive Learning Rates with Sublinear Memory Cost"
     (https://arxiv.org/abs/1804.04235)
-    Args:
-        lr (float, optional): learning rate (default: 1e-3)
-        beta1 (float, optional): coefficients used for computing
-            running averages of gradient and its square (default: None)
-        eps (Tuple [float, float] optional)
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        scale_parameter (float, optional): scale parameter (default: False)
-        relative_step (bool, optional): whether to use relative step sizes (default: False)
-        warmup_init (bool, optional): whether to warmup the learning rate linearly (default: False)
+
+    Parameters
+    ----------
+    lr: Learning rate.
+         (float, optional), (default: 1e-3)
+    beta1: Coefficients used for computing running averages of gradient and its square.
+        (float, optional), (default: None)
+    eps: Term added to the denominator to improve numerical stability.
+        (Tuple [float, float] optional)
+    weight_decay: Weight decay (L2 penalty).
+        (float, optional), (default: 0)
+    scale_parameter: Scale parameter.
+        (float, optional), (default: False)
+    relative_step: Whether to use relative step sizes.
+        (bool, optional), (default: False)
+    warmup_init: Whether to warm up the learning rate linearly.
+        (bool, optional) (default: False)
     """
 
     beta1: Optional[float] = None
@@ -208,11 +213,13 @@ class AdafactorParams(OptimizerParams):
 
 def register_optimizer_params(name: str, optimizer_params: OptimizerParams):
     """
-    Checks if the optimizer param name exists in the registry, and if it doesnt, adds it.
+    Checks if the optimizer param name exists in the registry, and if it doesn't, adds it.
     This allows custom optimizer params to be added and called by name during instantiation.
-    Args:
-        name: Name of the optimizer. Will be used as key to retrieve the optimizer.
-        optimizer_params: Optimizer class
+
+    Parameters
+    ----------
+    name: Name of the optimizer. Will be used as key to retrieve the optimizer.
+    optimizer_params: Optimizer class
     """
     if name in AVAILABLE_OPTIMIZER_PARAMS:
         raise ValueError(f"Cannot override pre-existing optimizers. Conflicting optimizer name = {name}")
@@ -225,11 +232,15 @@ def get_optimizer_config(
 ) -> Union[Dict[str, Optional[Dict[str, Any]]], partial]:
     """
     Convenience method to obtain a OptimizerParams class and partially instantiate it with optimizer kwargs.
-    Args:
-        name: Name of the OptimizerParams in the registry.
-        kwargs: Optional kwargs of the optimizer used during instantiation.
-    Returns:
-        a partially instantiated OptimizerParams
+
+    Parameters
+    ----------
+    name: Name of the OptimizerParams in the registry.
+    kwargs: Optional kwargs of the optimizer used during instantiation.
+
+    Returns
+    -------
+    A partially instantiated OptimizerParams.
     """
     if name is None:
         return kwargs
