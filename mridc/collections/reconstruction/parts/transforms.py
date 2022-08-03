@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from mridc.collections.common.parts.fft import fft2c, ifft2c
-from mridc.collections.common.parts.utils import complex_conj, complex_mul, to_tensor
+from mridc.collections.common.parts.utils import complex_conj, complex_mul, to_tensor, rss_complex
 from mridc.collections.reconstruction.data.subsample import MaskFunc
 from mridc.collections.reconstruction.parts.utils import apply_mask, center_crop, complex_center_crop
 
@@ -133,9 +133,13 @@ class MRIDataTransforms:
             eta = torch.tensor([])
 
         # TODO: add RSS target option
-        if sensitivity_map is not None and sensitivity_map.size != 0:
+        if target is not None and target.size != 0:
+            target = torch.from_numpy(target).unsqueeze(0)
+        elif sensitivity_map is not None and sensitivity_map.size != 0:
             target = torch.sum(complex_mul(ifft2c(kspace, fft_type=self.fft_type), complex_conj(sensitivity_map)), -4)
             target = torch.view_as_complex(target)
+        elif sensitivity_map is None:
+            target = rss_complex(ifft2c(kspace, fft_type=self.fft_type), dim=-4)
         elif target is not None and target.size != 0:
             target = to_tensor(target).squeeze(1)
             target = torch.view_as_complex(target)
@@ -144,7 +148,7 @@ class MRIDataTransforms:
         else:
             raise ValueError("No target found")
 
-        target = torch.abs(target / torch.abs(target).amax((-1, -2), True))
+        target = torch.abs(target / batch_max(torch.abs(target)))
 
         seed = None if not self.use_seed else tuple(map(ord, fname))
         acq_start = attrs["padding_left"] if "padding_left" in attrs else 0
@@ -282,46 +286,62 @@ class MRIDataTransforms:
         if self.normalize_inputs:
             if isinstance(self.mask_func, list):
                 masked_kspaces = []
+                max_values = []
                 for y in masked_kspace:
                     if self.fft_type in ("orthogonal", "orthogonal_norm_only"):
                         imspace = ifft2c(y, fft_type=self.fft_type)
-                        imspace = imspace / torch.abs(imspace).amax((-1, -2), True)
+                        max_values.append(batch_max(torch.abs(imspace)))
+                        imspace = imspace / batch_max(torch.abs(imspace))
                         masked_kspaces.append(fft2c(imspace, fft_type=self.fft_type))
                     elif self.fft_type == "fft_norm_only":
                         imspace = ifft2c(y, fft_type=self.fft_type)
+                        max_values.append(torch.Tensor([1], device=imspace.device))
                         masked_kspaces.append(fft2c(imspace, fft_type=self.fft_type))
                     elif self.fft_type == "backward_norm":
                         imspace = ifft2c(y, fft_type=self.fft_type, fft_normalization="backward")
+                        max_values.append(torch.Tensor([1], device=imspace.device))
                         masked_kspaces.append(fft2c(imspace, fft_type=self.fft_type, fft_normalization="backward"))
                     else:
                         imspace = torch.fft.ifftn(torch.view_as_complex(y), dim=[-2, -1], norm=None)
-                        imspace = imspace / torch.abs(imspace).amax((-1, -2), True)
+                        max_values.append(batch_max(torch.abs(imspace)))
+                        imspace = imspace / batch_max(torch.abs(imspace))
                         masked_kspaces.append(torch.view_as_real(torch.fft.fftn(imspace, dim=[-2, -1], norm=None)))
                 masked_kspace = masked_kspaces
+                max_value = max_values
             else:
                 if self.fft_type in ("orthogonal", "orthogonal_norm_only"):
                     imspace = ifft2c(masked_kspace, fft_type=self.fft_type)
-                    imspace = imspace / torch.abs(imspace).amax((-1, -2), True)
+                    max_value = batch_max(torch.abs(imspace))
+                    imspace = imspace / batch_max(torch.abs(imspace))
                     masked_kspace = fft2c(imspace, fft_type=self.fft_type)
                 elif self.fft_type == "fft_norm_only":
-                    masked_kspace = fft2c(ifft2c(masked_kspace, fft_type=self.fft_type), fft_type=self.fft_type)
+                    imspace = ifft2c(masked_kspace, fft_type=self.fft_type)
+                    max_value = torch.Tensor([1], device=imspace.device)
+                    masked_kspace = fft2c(imspace, fft_type=self.fft_type)
                 elif self.fft_type == "backward_norm":
-                    masked_kspace = fft2c(
-                        ifft2c(masked_kspace, fft_type=self.fft_type, fft_normalization="backward"),
-                        fft_type=self.fft_type,
-                        fft_normalization="backward",
-                    )
+                    imspace = ifft2c(masked_kspace, fft_type=self.fft_type, fft_normalization="backward")
+                    max_value = torch.Tensor([1], device=imspace.device)
+                    masked_kspace = fft2c(imspace, fft_type=self.fft_type, fft_normalization="backward",)
                 else:
                     imspace = torch.fft.ifftn(torch.view_as_complex(masked_kspace), dim=[-2, -1], norm=None)
-                    imspace = imspace / torch.abs(imspace).amax((-1, -2), True)
+                    max_value = batch_max(torch.abs(imspace))
+                    imspace = imspace / batch_max(torch.abs(imspace))
                     masked_kspace = torch.view_as_real(torch.fft.fftn(imspace, dim=[-2, -1], norm=None))
 
             if sensitivity_map.size != 0:
-                sensitivity_map = sensitivity_map / torch.abs(sensitivity_map).amax((-1, -2), True)
+                sensitivity_map = sensitivity_map / batch_max(torch.abs(sensitivity_map))
 
             if eta.size != 0 and eta.ndim > 2:
-                eta = eta / torch.abs(eta).amax((-1, -2), True)
+                eta = eta / batch_max(torch.abs(eta))
 
-            target = target / torch.abs(target).amax((-1, -2), True)
+            target = target / batch_max(torch.abs(target))
 
-        return masked_kspace, sensitivity_map, mask, eta, target, fname, slice_idx, acc
+        else:
+            max_value = torch.Tensor([1], device=sensitivity_map.device)
+
+        return masked_kspace, sensitivity_map, mask, eta, target, fname, slice_idx, (acc, max_value)
+
+
+def batch_max(tensor):
+    dims = list(range(tensor.dim()))
+    return torch.amax(tensor, dim=dims[1:], keepdim=True)

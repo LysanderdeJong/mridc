@@ -59,7 +59,7 @@ class ConvNonlinear(nn.Module):
         if nonlinear is not None and nonlinear.upper() == "RELU":
             self.nonlinear = torch.nn.ReLU()
         elif nonlinear is None:
-            self.nonlinear = lambda x: x
+            self.nonlinear = nn.Identity()
         else:
             raise ValueError("Please specify a proper nonlinearity")
 
